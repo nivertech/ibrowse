@@ -1388,7 +1388,7 @@ parse_headers(Headers) ->
                     parse_headers(StatusLine, T);
                 true ->
                     case StatusLine of % avoid bug in AWS 
-                        <<NotHTTP:4/bytes, _:15/bytes, ": (server.c.">> when NotHTTP =/= <<"HTTP">> ->
+                        <<NotHTTP:4/bytes, _:15/bytes, ": (server.c.", _/bytes>> when NotHTTP =/= <<"HTTP">> ->
                             case scan_crlf(T) of
                                 {yes, StatusLine2, T2} ->
                                     parse_headers(StatusLine2, T2);
