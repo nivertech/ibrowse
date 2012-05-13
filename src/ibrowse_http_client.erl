@@ -1389,7 +1389,22 @@ set_cur_request(#state{reqs = Reqs, socket = Socket} = State) ->
 parse_headers(Headers) ->
     case scan_crlf(Headers) of
         {yes, StatusLine, T} ->
-            parse_headers(StatusLine, T);
+            case byte_size(StatusLine) > 31 of 
+                false ->
+                    parse_headers(StatusLine, T);
+                true ->
+                    case StatusLine of % avoid bug in AWS 
+                        <<NotHTTP:4/bytes, _:15/bytes, ": (server.c.", _/bytes>> when NotHTTP =/= <<"HTTP">> ->
+                            case scan_crlf(T) of
+                                {yes, StatusLine2, T2} ->
+                                    parse_headers(StatusLine2, T2);
+                                {no, StatusLine2} ->
+                                    parse_headers(StatusLine2, <<>>)
+                            end;
+                        _ ->
+                            parse_headers(StatusLine, T)
+                    end
+            end;
         {no, StatusLine} ->
             parse_headers(StatusLine, <<>>)
     end.

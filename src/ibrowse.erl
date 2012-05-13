@@ -323,7 +323,13 @@ send_req(Url, Headers, Method, Body, Options, Timeout) ->
                 case (Protocol == https) orelse
                     get_value(is_ssl, Options_1, false) of
                     false -> {[], false};
-                    true -> {get_value(ssl_options, Options_1, []), true}
+                    true ->
+                        SSLOptionsValue = get_value(ssl_options, Options_1, []),
+                        SSLOptionsValue2 = case erlang:system_info(version) of
+                            "5.8.5" -> [{ssl_imp, old}|SSLOptionsValue]; % old erlang version with buggy ssl implementation
+                            _       -> SSLOptionsValue
+                        end,
+                        {SSLOptionsValue2, true}
                 end,
             try_routing_request(Lb_pid, Parsed_url,
                                 Max_sessions, 
